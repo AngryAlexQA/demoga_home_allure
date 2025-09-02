@@ -7,7 +7,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.core.utils import ChromeType
 
 # Получение корневой директории проекта
 ROOT_DIR = Path(__file__).parent.parent.absolute()
@@ -18,7 +17,7 @@ def driver():
     user_data_dir = tempfile.mkdtemp()
     
     # Определение пути к ChromeDriver
-    chrome_driver_path = ChromeDriverManager(chrome_type=ChromeType.GOOGLE).install()
+    chrome_driver_path = ChromeDriverManager().install()
     
     # Проверка и установка прав на выполнение
     os.chmod(chrome_driver_path, 0o755)
