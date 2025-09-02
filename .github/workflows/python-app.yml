@@ -13,30 +13,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
-    - name: Install Chrome Browser
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
-
-    - name: Get installed Chrome version
-      id: chrome-version
-      run: |
-        echo "version=$(google-chrome --version | awk '{print $3}')" >> $GITHUB_OUTPUT
-
-    - name: Install ChromeDriver
-      run: |
-        CHROME_VERSION=${{ steps.chrome-version.outputs.version }}
-        CHROMEDRIVER_VERSION=${CHROME_VERSION%.*}
-        wget -q -O chromedriver.zip "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip"
-        unzip -o chromedriver.zip -d /tmp/
-        sudo mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/
-        sudo chmod +x /usr/local/bin/chromedriver
-        chromedriver --version
+    - name: Setup Chrome
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
 
     - name: Install dependencies
       run: |
