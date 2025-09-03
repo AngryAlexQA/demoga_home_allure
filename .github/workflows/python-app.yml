@@ -1,36 +1,46 @@
-import pytest
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-import os
+name: Python Tests
 
-@pytest.fixture(scope="function")
-def driver():
-    # Настройка опций Chrome
-    chrome_options = Options()
-    
-    # Определяем, запущено ли в CI (GitHub Actions)
-    is_ci = os.getenv('CI') == 'true'
-    
-    if is_ci:
-        # Настройки для GitHub Actions
-        chrome_options.add_argument("--headless=new")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        
-        # Используем системный ChromeDriver в CI
-        service = Service(executable_path="/usr/local/bin/chromedriver")
-    else:
-        # Настройки для локального запуска
-        from webdriver_manager.chrome import ChromeDriverManager
-        service = Service(executable_path=ChromeDriverManager().install())
-    
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.maximize_window()
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
-    yield driver
+jobs:
+  test:
+    runs-on: ubuntu-latest
 
-    # Закрытие драйвера после теста
-    driver.quit()
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Chrome and ChromeDriver
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget gnupg
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+
+        # Install ChromeDriver
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+        CHROME_MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d'.' -f1)
+        wget -O chromedriver.zip "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR_VERSION"
+        unzip chromedriver.zip
+        sudo mv chromedriver /usr/local/bin/
+        sudo chmod +x /usr/local/bin/chromedriver
+
+    - name: Run tests
+      run: |
+        python -m pytest demoqa_home/tests/ -v --tb=short
