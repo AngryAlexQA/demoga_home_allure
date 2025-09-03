@@ -1,4 +1,4 @@
-[![Python Tests](https://github.com/AngryAlexQA/demoga_home/actions/workflows/python-app.yml/badge.svg?branch=main)](https://github.com/AngryAlexQA/demoga_home/actions/workflows/python-app.yml)
+[![Python Selenium Tests](https://github.com/AngryAlexQA/demoga_home/actions/workflows/python-app.yml/badge.svg)](https://github.com/AngryAlexQA/demoga_home/actions/workflows/python-app.yml)
 
 # DemoQA Home Project
 
