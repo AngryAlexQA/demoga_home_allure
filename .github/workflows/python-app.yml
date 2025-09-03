@@ -1,4 +1,4 @@
-name: Python Tests
+name: Python Selenium Tests
 
 on:
   push:
@@ -9,38 +9,94 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
+    - name: Setup Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          chromium-browser \
+          chromium-chromedriver \
+          xvfb \
+          fonts-liberation \
+          libu2f-udev \
+          libvulkan1 \
+          libgbm1
 
-    - name: Install dependencies
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install \
+          pytest \
+          selenium \
+          webdriver-manager \
+          allure-pytest \
+          pytest-xdist \
+          pytest-selenium
 
-    - name: Install Chrome and ChromeDriver
+    - name: Prepare test environment
       run: |
-        sudo apt-get update
-        sudo apt-get install -y wget gnupg
-        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
+        mkdir -p screenshots
+        mkdir -p allure-results
+        mkdir -p test-results
 
-        # Install ChromeDriver
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-        CHROME_MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d'.' -f1)
-        wget -O chromedriver.zip "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR_VERSION"
-        unzip chromedriver.zip
-        sudo mv chromedriver /usr/local/bin/
-        sudo chmod +x /usr/local/bin/chromedriver
-
-    - name: Run tests
+    - name: Run Selenium tests
+      env:
+        DISPLAY: :99
       run: |
-        python -m pytest demoqa_home/tests/ -v --tb=short
+        sudo Xvfb :99 & 
+        pytest tests/ \
+          -v \
+          --tb=short \
+          --alluredir=allure-results \
+          --junitxml=test-results/test-results.xml \
+          -n auto
+
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: test-artifacts
+        path: |
+          screenshots/
+          test-results/
+          allure-results/
+        retention-days: 5
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: test-results/test-results.xml
+        check_name: "Selenium Test Results"
+        comment_mode: "always"
+
+    - name: Generate Allure Report
+      uses: simple-elf/allure-report-action@v1.7
+      if: always()
+      with:
+        allure_results: allure-results
+        allure_report: allure-report
+        allure_history: allure-history
+
+    - name: Deploy Allure report to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: always()
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: allure-report
+        publish_branch: gh-pages
