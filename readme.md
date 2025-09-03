@@ -1,4 +1,5 @@
 [![Python Selenium Tests](https://github.com/AngryAlexQA/demoga_home_allure/actions/workflows/python-app.yml/badge.svg)](https://github.com/AngryAlexQA/demoga_home_allure/actions/workflows/python-app.yml)
+[![pages-build-deployment](https://github.com/AngryAlexQA/demoga_home_allure/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/AngryAlexQA/demoga_home_allure/actions/workflows/pages/pages-build-deployment)
 
 # DemoQA Home Project+Allure
 
